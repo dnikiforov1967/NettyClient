@@ -5,7 +5,6 @@
  */
 package com.example.demo.adv;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -17,17 +16,17 @@ import io.netty.handler.codec.http.HttpClientCodec;
  */
 public class ProxyToSererInitializer extends ChannelInitializer<SocketChannel> {
 
-	private final Channel clientChannel;
+	private final ConnectionAdapter adapter;
 
-	public ProxyToSererInitializer(Channel clientChannel) {
-		this.clientChannel = clientChannel;
+	public ProxyToSererInitializer(ConnectionAdapter adapter) {
+		this.adapter = adapter;
 	}
 	
 	@Override
 	protected void initChannel(SocketChannel channel) throws Exception {
 		ChannelPipeline pipeline = channel.pipeline();
 		pipeline.addLast(new HttpClientCodec());
-		pipeline.addLast("handler", new ProxyToServerAdaperHandler(clientChannel));
+		pipeline.addLast("handler", new ProxyToServerAdaperHandler(adapter));
 	}
 	
 }

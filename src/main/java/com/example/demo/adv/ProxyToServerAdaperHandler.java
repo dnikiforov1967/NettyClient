@@ -5,7 +5,6 @@
  */
 package com.example.demo.adv;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpObject;
@@ -17,31 +16,31 @@ import io.netty.handler.codec.http.HttpObject;
  */
 public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 
-	private final Channel clientChannel;
+	private final ConnectionAdapter adapter;
 
-	public ProxyToServerAdaperHandler(final Channel clientChannel) {
-		this.clientChannel = clientChannel;
+	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter) {
+		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final Channel clientChannel, boolean autoRelease) {
+	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, boolean autoRelease) {
 		super(autoRelease);
-		this.clientChannel = clientChannel;
+		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final Channel clientChannel, Class inboundMessageType) {
+	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, Class inboundMessageType) {
 		super(inboundMessageType);
-		this.clientChannel = clientChannel;
+		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final Channel clientChannel, Class inboundMessageType, boolean autoRelease) {
+	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, Class inboundMessageType, boolean autoRelease) {
 		super(inboundMessageType, autoRelease);
-		this.clientChannel = clientChannel;
+		this.adapter = adapter;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
 		if (obj instanceof HttpObject) {
-			clientChannel.writeAndFlush(obj);
+			adapter.writeToClient(obj);
 		}
 	}
 
