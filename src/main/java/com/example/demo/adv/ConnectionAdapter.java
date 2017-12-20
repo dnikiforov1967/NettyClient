@@ -39,6 +39,7 @@ public class ConnectionAdapter {
 					.handler(new ProxyToSererInitializer(this));
 			ChannelFuture channelFuture = bootstrap.connect().sync();
 			serverChannel = channelFuture.channel();
+			System.out.println("Server channel was instantiated");
 			serverChannel.closeFuture().sync();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -59,6 +60,7 @@ public class ConnectionAdapter {
 			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
 		}
 		serverChannel.writeAndFlush(obj);
+		System.out.println("I write to server "+obj.getClass().getName());
 	}
 
 }

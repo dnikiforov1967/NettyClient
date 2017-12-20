@@ -39,6 +39,7 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
+		System.out.println("I read "+obj.getClass().getName());
 		if (obj instanceof HttpObject) {
 			adapter.writeToClient(obj);
 		}
