@@ -26,7 +26,7 @@ public class ClientAdapter extends ChannelInboundHandlerAdapter {
             HttpRequest request = (HttpRequest)msg;
             System.out.println("HttpRequest "+request.getUri());
             connectionAdapter=new ConnectionAdapter(ctx.channel());
-			connectionAdapter.init();
+			connectionAdapter.init(request);
         }
 		connectionAdapter.writeToServer(msg);
     }

@@ -5,13 +5,19 @@
  */
 package com.example.demo.adv;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 
 /**
- * Simplest handler what accepts client channel as a parameter and read server responses there
- * 
+ * Simplest handler what accepts client channel as a parameter and read server
+ * responses there
+ *
  * @author dnikiforov
  */
 public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
@@ -39,9 +45,22 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
-		System.out.println("I read "+obj.getClass().getName());
 		if (obj instanceof HttpObject) {
-			adapter.writeToClient(obj);
+			if (obj instanceof HttpContent) {
+				HttpContent content = (HttpContent) obj;
+				ByteBuf buff = content.content();
+				ByteBuf copy = buff.copy();
+				//String str = buff.toString(StandardCharsets.UTF_8);
+				adapter.writeToClient(copy);
+				if (obj instanceof LastHttpContent) {
+					adapter.closeClient();
+				}
+				System.out.println("I write to client " + obj.getClass().getName());
+			} else if (obj instanceof HttpResponse) {
+				adapter.writeToClient(obj);
+				System.out.println("I write to client " + obj.getClass().getName());
+			}
+
 		}
 	}
 

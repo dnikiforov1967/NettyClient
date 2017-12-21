@@ -6,6 +6,7 @@
 package com.example.demo.adv;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -14,7 +15,14 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Promise;
 import java.net.InetSocketAddress;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -22,14 +30,43 @@ import java.net.InetSocketAddress;
  */
 public class ConnectionAdapter {
 
+	private static class RunGoal implements Runnable {
+
+		private final Channel channel;
+		private final EventLoopGroup group;
+
+		public RunGoal(Channel channel, EventLoopGroup group) {
+			this.channel = channel;
+			this.group = group;
+		}
+
+		@Override
+		public void run() {
+			try {
+				channel.closeFuture().sync();
+			} catch (InterruptedException ex) {
+				Logger.getLogger(ConnectionAdapter.class.getName()).log(Level.SEVERE, null, ex);
+			} finally {
+				group.shutdownGracefully();
+			}
+		}
+
+	}
+
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
+	private volatile boolean isKeepAlive = false;
 
 	public ConnectionAdapter(Channel clientChannel) {
 		this.clientChannel = clientChannel;
 	}
 
-	public void init() {
+	public void init(HttpRequest request) {
+
+		if (HttpUtil.isKeepAlive(request)) {
+			isKeepAlive = true;
+		}
+
 		EventLoopGroup group = new NioEventLoopGroup();
 
 		try {
@@ -40,16 +77,28 @@ public class ConnectionAdapter {
 			ChannelFuture channelFuture = bootstrap.connect().sync();
 			serverChannel = channelFuture.channel();
 			System.out.println("Server channel was instantiated");
-			serverChannel.closeFuture().sync();
+			Thread t = new Thread(new RunGoal(serverChannel, group));
+			t.setDaemon(true);
+			t.start();
+			//serverChannel.closeFuture().sync();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} finally {
-			group.shutdownGracefully();
+			//group.shutdownGracefully();
 		}
 	}
 
-	public void writeToClient(Object obj) {
-		clientChannel.writeAndFlush(obj);
+	public ChannelFuture writeToClient(Object obj) {
+		if (obj instanceof HttpResponse) {
+			if (isKeepAlive) {
+				HttpResponse response = (HttpResponse) obj;
+				response.headers().set(
+						HttpHeaderNames.CONNECTION,
+						HttpHeaderValues.KEEP_ALIVE
+				);
+			}
+		}
+		return clientChannel.writeAndFlush(obj);
 	}
 
 	public void writeToServer(Object obj) {
@@ -60,7 +109,39 @@ public class ConnectionAdapter {
 			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
 		}
 		serverChannel.writeAndFlush(obj);
-		System.out.println("I write to server "+obj.getClass().getName());
+		System.out.println("I write to server " + obj.getClass().getName());
 	}
 
+	public void closeClient() {
+        if (clientChannel != null) {
+            final Promise<Void> promise = clientChannel.newPromise();
+            writeToClient(Unpooled.EMPTY_BUFFER).addListener(
+                    new GenericFutureListener<Future<? super Void>>() {
+                        @Override
+                        public void operationComplete(
+                                Future<? super Void> future)
+                                throws Exception {
+                            closeClientChannel(promise);
+                        }
+                    });
+        }
+    }		
+
+    private void closeClientChannel(final Promise<Void> promise) {
+        clientChannel.close().addListener(
+                new GenericFutureListener<Future<? super Void>>() {
+                    public void operationComplete(
+                            Future<? super Void> future)
+                            throws Exception {
+                        if (future
+                                .isSuccess()) {
+                            promise.setSuccess(null);
+                        } else {
+                            promise.setFailure(future
+                                    .cause());
+                        }
+                    };
+                });
+    }	
+	
 }
