@@ -12,11 +12,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
@@ -90,11 +92,17 @@ public class ConnectionAdapter {
 
 	public ChannelFuture writeToClient(Object obj) {
 		if (obj instanceof HttpResponse) {
+			HttpResponse response = (HttpResponse) obj;
+			response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
 			if (isKeepAlive) {
-				HttpResponse response = (HttpResponse) obj;
 				response.headers().set(
 						HttpHeaderNames.CONNECTION,
 						HttpHeaderValues.KEEP_ALIVE
+				);
+			} else {
+				response.headers().set(
+						HttpHeaderNames.CONNECTION,
+						HttpHeaderValues.CLOSE
 				);
 			}
 		}
@@ -104,44 +112,55 @@ public class ConnectionAdapter {
 	public void writeToServer(Object obj) {
 		if (obj instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) obj;
-			request.headers().set(HttpHeaderNames.HOST, "localhost");
 			request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
 			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+		} else {
+			if (obj instanceof HttpContent) {
+				if (obj instanceof LastHttpContent) {
+					obj = Unpooled.EMPTY_BUFFER;
+				} else {
+					obj = ((HttpContent) obj).content();
+				}
+			}
 		}
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
 
 	public void closeClient() {
-        if (clientChannel != null) {
-            final Promise<Void> promise = clientChannel.newPromise();
-            writeToClient(Unpooled.EMPTY_BUFFER).addListener(
-                    new GenericFutureListener<Future<? super Void>>() {
-                        @Override
-                        public void operationComplete(
-                                Future<? super Void> future)
-                                throws Exception {
-                            closeClientChannel(promise);
-                        }
-                    });
-        }
-    }		
+		if (clientChannel != null) {
+			final Promise<Void> promise = clientChannel.newPromise();
+			writeToClient(Unpooled.EMPTY_BUFFER).addListener(
+					new GenericFutureListener<Future<? super Void>>() {
+				@Override
+				public void operationComplete(
+						Future<? super Void> future)
+						throws Exception {
+					closeClientChannel(promise);
+				}
+			});
+		}
+	}
 
-    private void closeClientChannel(final Promise<Void> promise) {
-        clientChannel.close().addListener(
-                new GenericFutureListener<Future<? super Void>>() {
-                    public void operationComplete(
-                            Future<? super Void> future)
-                            throws Exception {
-                        if (future
-                                .isSuccess()) {
-                            promise.setSuccess(null);
-                        } else {
-                            promise.setFailure(future
-                                    .cause());
-                        }
-                    };
-                });
+	private void closeClientChannel(final Promise<Void> promise) {
+		clientChannel.close().addListener(
+				new GenericFutureListener<Future<? super Void>>() {
+			public void operationComplete(
+					Future<? super Void> future)
+					throws Exception {
+				if (future
+						.isSuccess()) {
+					promise.setSuccess(null);
+				} else {
+					promise.setFailure(future
+							.cause());
+				}
+			}
+		;
+	}
+
+
+);
     }	
 	
 }
