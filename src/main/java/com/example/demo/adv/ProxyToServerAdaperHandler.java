@@ -67,6 +67,7 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 				if (obj instanceof LastHttpContent) {
 					obj = ProxyUtil.transformLastHttpContent((LastHttpContent) obj);
 					adapter.writeToClient(obj);
+					System.out.println("I write to client " + obj.getClass().getName());
 				} else {
 					obj = ProxyUtil.transformHttpContent((HttpContent) obj);
 					adapter.writeToClient(obj);
