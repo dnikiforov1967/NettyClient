@@ -5,6 +5,7 @@
  */
 package com.example.demo.adv;
 
+import com.example.demo.util.ProxyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -54,24 +55,23 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
 		if (obj instanceof HttpObject) {
-			if (obj instanceof HttpContent) {
-				if (obj instanceof LastHttpContent) {
-					//adapter.closeClient();
-					adapter.writeToClient(obj);
-				}
-				HttpContent content = (HttpContent) obj;
-				ByteBuf buff = content.content();
-				ByteBuf copy = buff.copy();
-				//String str = buff.toString(StandardCharsets.UTF_8);
-				adapter.writeToClient(copy);
-				System.out.println("I write to client " + obj.getClass().getName());
-			} else if (obj instanceof HttpResponse) {
-				obj = duplicateHttpResponse((HttpResponse) obj);
+			if (obj instanceof HttpResponse) {
+				obj = ProxyUtil.transformHttpResponse((HttpResponse) obj);
 				adapter.writeToClient(obj);
 				System.out.println("I write to client " + obj.getClass().getName());
 				((HttpResponse) obj).headers().forEach((e) -> {
 					System.out.println(e.getKey() + ":" + e.getValue());
 				});
+			}
+			if (obj instanceof HttpContent) {
+				if (obj instanceof LastHttpContent) {
+					obj = ProxyUtil.transformLastHttpContent((LastHttpContent) obj);
+					adapter.writeToClient(obj);
+				} else {
+					obj = ProxyUtil.transformHttpContent((HttpContent) obj);
+					adapter.writeToClient(obj);
+					System.out.println("I write to client " + obj.getClass().getName());
+				}
 			}
 
 		}
