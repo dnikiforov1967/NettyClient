@@ -55,23 +55,8 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
 		if (obj instanceof HttpObject) {
-			if (obj instanceof HttpResponse) {
-				obj = ProxyUtil.transformHttpResponse((HttpResponse) obj);
-				adapter.appendChunkHeader(obj);
-				System.out.println("I write to client " + obj.getClass().getName());
-				((HttpResponse) obj).headers().forEach((e) -> {
-					System.out.println(e.getKey() + ":" + e.getValue());
-				});
-			}
-			if (obj instanceof HttpContent) {
-				if (obj instanceof LastHttpContent) {
-					obj = ProxyUtil.transformLastHttpContent((LastHttpContent) obj);
-					System.out.println("I write to client " + obj.getClass().getName());
-				} else {
-					obj = ProxyUtil.transformHttpContent((HttpContent) obj);
-					System.out.println("I write to client " + obj.getClass().getName());
-				}
-			}
+			obj = ProxyUtil.transformAnswerToClient((HttpObject) obj);
+			adapter.appendChunkHeader(obj);
 			adapter.writeToClient(obj);
 		}
 	}

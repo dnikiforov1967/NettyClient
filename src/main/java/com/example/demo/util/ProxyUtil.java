@@ -38,23 +38,22 @@ public final class ProxyUtil {
 		return lastHttpContent;
 	}
 
-	public static ChannelFuture writeAndFlushResponse(Channel channel, Object httpObject) {
-		Object writableObject = null;
+	public static Object transformAnswerToClient(Object httpObject) {
 		if (httpObject instanceof HttpResponse) {
-			writableObject = transformHttpResponse((HttpResponse) httpObject);
-			((HttpResponse) writableObject).headers().forEach((e) -> {
+			httpObject = transformHttpResponse((HttpResponse) httpObject);
+			((HttpResponse) httpObject).headers().forEach((e) -> {
 				System.out.println(e.getKey() + ":" + e.getValue());
 			});
 		}
 		if (httpObject instanceof HttpContent) {
 			if (httpObject instanceof LastHttpContent) {
-				writableObject = transformLastHttpContent((LastHttpContent) httpObject);
+				httpObject = transformLastHttpContent((LastHttpContent) httpObject);
 			} else {
-				writableObject = transformHttpContent((HttpContent) httpObject);
+				httpObject = transformHttpContent((HttpContent) httpObject);
 			}
 		}
-		System.out.println("I write to client " + writableObject.getClass().getName());
-		return channel.writeAndFlush(writableObject);
+		System.out.println("I write to client " + httpObject.getClass().getName());
+		return httpObject;
 	}
 
 }
