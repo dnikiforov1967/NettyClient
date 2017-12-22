@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example;
 
 import org.openproxy.server.impl.ClientToProxyInitializer;
 import io.netty.bootstrap.ServerBootstrap;
