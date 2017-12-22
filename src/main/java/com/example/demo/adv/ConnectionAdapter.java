@@ -103,15 +103,15 @@ public class ConnectionAdapter {
 			HttpRequest request = (HttpRequest) obj;
 			request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
 			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-		} else {
-			if (obj instanceof HttpContent) {
-				if (obj instanceof LastHttpContent) {
-					obj = Unpooled.EMPTY_BUFFER;
-				} else {
-					obj = ((HttpContent) obj).content();
-				}
+		}
+		if (obj instanceof HttpContent) {
+			if (obj instanceof LastHttpContent) {
+				obj = ((LastHttpContent) obj).copy(); //Unpooled.EMPTY_BUFFER;
+			} else {
+				obj = ((HttpContent) obj).content().copy();
 			}
 		}
+
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
