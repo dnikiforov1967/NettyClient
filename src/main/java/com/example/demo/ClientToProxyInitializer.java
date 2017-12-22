@@ -20,6 +20,6 @@ public class ClientToProxyInitializer extends ChannelInitializer<SocketChannel> 
 	public void initChannel(SocketChannel ch) throws Exception {
 		ch.pipeline().addLast("decoder", new HttpRequestDecoder());
 		ch.pipeline().addLast("encoder", new HttpResponseEncoder());
-		ch.pipeline().addLast(new ClientAdapter());
+		ch.pipeline().addLast(new ClientToProxyAdapterHandler());
 	}
 }
