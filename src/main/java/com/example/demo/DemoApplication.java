@@ -42,7 +42,7 @@ public class DemoApplication {
 
 	public static void main(String[] args) {
 		//SpringApplication.run(DemoApplication.class, args);
-		new DemoApplication(8181, 2, 16).openServer(new ClientHandler());
+		new DemoApplication(8181, 2, 16).openServer(new ClientToProxyInitializer());
 	}
 
 	public void openServer(ChannelHandler handler) {
