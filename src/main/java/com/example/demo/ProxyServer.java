@@ -30,7 +30,6 @@ public class ProxyServer {
 	}
 
 	public static void main(String[] args) {
-		//SpringApplication.run(DemoApplication.class, args);
 		new ProxyServer(8181, 2, 16).openServer(new ClientToProxyInitializer());
 	}
 
