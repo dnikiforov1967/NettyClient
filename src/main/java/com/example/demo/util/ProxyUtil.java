@@ -25,17 +25,17 @@ public final class ProxyUtil {
 
 	}
 
-	public static ByteBuf transformHttpContent(HttpContent httpContent) {
+	private static ByteBuf transformHttpContent(HttpContent httpContent) {
 		return httpContent.content().copy();
 	}
 
-	public static HttpResponse transformHttpResponse(HttpResponse originalResponse) {
+	private static HttpResponse transformHttpResponse(HttpResponse originalResponse) {
 		DefaultHttpResponse response = new DefaultHttpResponse(originalResponse.protocolVersion(), originalResponse.status());
 		response.headers().add(originalResponse.headers());
 		return response;
 	}
 
-	public static HttpContent transformLastHttpContent(LastHttpContent lastHttpContent) {
+	private static HttpContent transformLastHttpContent(LastHttpContent lastHttpContent) {
 		return lastHttpContent.copy();
 	}
 
