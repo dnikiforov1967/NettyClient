@@ -5,7 +5,7 @@
  */
 package com.example.demo;
 
-import com.example.demo.adv.InterConnectionMediator;
+import org.openproxy.server.impl.InterConnectionMediator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
