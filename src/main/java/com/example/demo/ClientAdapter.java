@@ -5,7 +5,7 @@
  */
 package com.example.demo;
 
-import com.example.demo.adv.ConnectionAdapter;
+import com.example.demo.adv.InterConnectionMediator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
@@ -19,14 +19,14 @@ import io.netty.handler.codec.http.HttpResponse;
  */
 public class ClientAdapter extends ChannelInboundHandlerAdapter {
 	
-	private ConnectionAdapter connectionAdapter;
+	private InterConnectionMediator connectionAdapter;
 	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) msg;
 			System.out.println("HttpRequest " + request.getUri());
-			connectionAdapter = new ConnectionAdapter(ctx.channel());
+			connectionAdapter = new InterConnectionMediator(ctx.channel());
 			connectionAdapter.init(request);
 			HttpHeaders headers = request.headers();
 			headers.entries().forEach((e) -> {

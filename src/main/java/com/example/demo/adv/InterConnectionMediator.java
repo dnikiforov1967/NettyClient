@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  *
  * @author dnikiforov
  */
-public class ConnectionAdapter {
+public class InterConnectionMediator {
 
 	private static class CloseTask implements Runnable {
 
@@ -49,7 +49,7 @@ public class ConnectionAdapter {
 			try {
 				closeFuture.sync();
 			} catch (InterruptedException ex) {
-				Logger.getLogger(ConnectionAdapter.class.getName()).log(Level.SEVERE, null, ex);
+				Logger.getLogger(InterConnectionMediator.class.getName()).log(Level.SEVERE, null, ex);
 			} finally {
 				eventLoop.shutdownGracefully();
 			}
@@ -61,7 +61,7 @@ public class ConnectionAdapter {
 	private volatile Channel serverChannel;
 	private volatile boolean isKeepAlive = false;
 
-	public ConnectionAdapter(Channel clientChannel) {
+	public InterConnectionMediator(Channel clientChannel) {
 		this.clientChannel = clientChannel;
 	}
 

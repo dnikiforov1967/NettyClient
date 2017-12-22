@@ -16,9 +16,9 @@ import io.netty.handler.codec.http.HttpClientCodec;
  */
 public class ProxyToSererInitializer extends ChannelInitializer<SocketChannel> {
 
-	private final ConnectionAdapter adapter;
+	private final InterConnectionMediator adapter;
 
-	public ProxyToSererInitializer(ConnectionAdapter adapter) {
+	public ProxyToSererInitializer(InterConnectionMediator adapter) {
 		this.adapter = adapter;
 	}
 	

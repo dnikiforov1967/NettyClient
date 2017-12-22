@@ -24,23 +24,23 @@ import io.netty.handler.codec.http.LastHttpContent;
  */
 public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 
-	private final ConnectionAdapter adapter;
+	private final InterConnectionMediator adapter;
 
-	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter) {
+	public ProxyToServerAdaperHandler(final InterConnectionMediator adapter) {
 		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, boolean autoRelease) {
+	public ProxyToServerAdaperHandler(final InterConnectionMediator adapter, boolean autoRelease) {
 		super(autoRelease);
 		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, Class inboundMessageType) {
+	public ProxyToServerAdaperHandler(final InterConnectionMediator adapter, Class inboundMessageType) {
 		super(inboundMessageType);
 		this.adapter = adapter;
 	}
 
-	public ProxyToServerAdaperHandler(final ConnectionAdapter adapter, Class inboundMessageType, boolean autoRelease) {
+	public ProxyToServerAdaperHandler(final InterConnectionMediator adapter, Class inboundMessageType, boolean autoRelease) {
 		super(inboundMessageType, autoRelease);
 		this.adapter = adapter;
 	}
