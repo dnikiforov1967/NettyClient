@@ -11,6 +11,8 @@ import java.util.logging.Logger;
 
 public class DemoApplication {
 
+	private static final Logger LOG = Logger.getLogger(DemoApplication.class.getName());
+
 	private int listenThreads = 2;
 	private int workerThreads = 16;
 	private int listenPort = 80;
@@ -53,7 +55,7 @@ public class DemoApplication {
 			sync = bootStrap.bind(listenPort).sync();
 			sync.channel().closeFuture().sync();
 		} catch (InterruptedException ex) {
-			Logger.getLogger(DemoApplication.class.getName()).log(Level.SEVERE, null, ex);
+			LOG.log(Level.SEVERE, null, ex);
 		} finally {
 			workerGroup.shutdownGracefully();
 			bossGroup.shutdownGracefully();
