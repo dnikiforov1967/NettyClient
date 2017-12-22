@@ -10,6 +10,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -33,14 +34,14 @@ import java.util.logging.Logger;
  */
 public class ConnectionAdapter {
 
-	private static class RunGoal implements Runnable {
+	private static class CloseTask implements Runnable {
 
 		private final ChannelFuture closeFuture;
-		private final EventLoopGroup group;
+		private final EventLoop eventLoop;
 
-		public RunGoal(ChannelFuture closeFuture, EventLoopGroup group) {
+		public CloseTask(ChannelFuture closeFuture, EventLoop eventLoop) {
 			this.closeFuture = closeFuture;
-			this.group = group;
+			this.eventLoop = eventLoop;
 		}
 
 		@Override
@@ -50,7 +51,7 @@ public class ConnectionAdapter {
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ConnectionAdapter.class.getName()).log(Level.SEVERE, null, ex);
 			} finally {
-				group.shutdownGracefully();
+				eventLoop.shutdownGracefully();
 			}
 		}
 
@@ -73,6 +74,12 @@ public class ConnectionAdapter {
 		EventLoopGroup group = new NioEventLoopGroup();
 
 		try {
+			EventLoop clientEventLoop = clientChannel.eventLoop();
+			ChannelFuture clientCloseFuture = clientChannel.closeFuture();
+			Thread tClient = new Thread(new CloseTask(clientCloseFuture, clientEventLoop));
+			tClient.setDaemon(true);
+			tClient.start();
+
 			Bootstrap bootstrap = new Bootstrap().group(group)
 					.channel(NioSocketChannel.class)
 					.remoteAddress(new InetSocketAddress("localhost", 8080))
@@ -81,9 +88,9 @@ public class ConnectionAdapter {
 			serverChannel = channelFuture.channel();
 			ChannelFuture closeFuture = serverChannel.closeFuture();
 			System.out.println("Server channel was instantiated");
-			Thread t = new Thread(new RunGoal(closeFuture, group));
-			t.setDaemon(true);
-			t.start();
+			Thread tServer = new Thread(new CloseTask(closeFuture, serverChannel.eventLoop()));
+			tServer.setDaemon(true);
+			tServer.start();
 			//serverChannel.closeFuture().sync();
 		} catch (InterruptedException e) {
 			//e.printStackTrace();
