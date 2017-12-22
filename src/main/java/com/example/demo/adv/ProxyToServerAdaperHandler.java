@@ -57,7 +57,7 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 		if (obj instanceof HttpObject) {
 			if (obj instanceof HttpResponse) {
 				obj = ProxyUtil.transformHttpResponse((HttpResponse) obj);
-				adapter.writeToClient(obj);
+				adapter.appendChunkHeader(obj);
 				System.out.println("I write to client " + obj.getClass().getName());
 				((HttpResponse) obj).headers().forEach((e) -> {
 					System.out.println(e.getKey() + ":" + e.getValue());
@@ -66,15 +66,13 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 			if (obj instanceof HttpContent) {
 				if (obj instanceof LastHttpContent) {
 					obj = ProxyUtil.transformLastHttpContent((LastHttpContent) obj);
-					adapter.writeToClient(obj);
 					System.out.println("I write to client " + obj.getClass().getName());
 				} else {
 					obj = ProxyUtil.transformHttpContent((HttpContent) obj);
-					adapter.writeToClient(obj);
 					System.out.println("I write to client " + obj.getClass().getName());
 				}
 			}
-
+			adapter.writeToClient(obj);
 		}
 	}
 

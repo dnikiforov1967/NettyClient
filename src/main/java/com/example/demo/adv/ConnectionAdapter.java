@@ -91,6 +91,10 @@ public class ConnectionAdapter {
 	}
 
 	public ChannelFuture writeToClient(Object obj) {
+		return clientChannel.writeAndFlush(obj);
+	}
+
+	public void appendChunkHeader(Object obj) {
 		if (obj instanceof HttpResponse) {
 			HttpResponse response = (HttpResponse) obj;
 			response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
@@ -105,8 +109,8 @@ public class ConnectionAdapter {
 						HttpHeaderValues.CLOSE
 				);
 			}
+			System.out.println("I append headers to " + obj.getClass().getName());
 		}
-		return clientChannel.writeAndFlush(obj);
 	}
 
 	public void writeToServer(Object obj) {
