@@ -6,19 +6,20 @@
 package com.example.demo.util;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  *
  * @author dnikiforov
  */
 public final class ProxyUtil {
+
+	private static final Logger LOG = Logger.getLogger(ProxyUtil.class.getName());
 
 	private ProxyUtil() {
 
@@ -41,9 +42,6 @@ public final class ProxyUtil {
 	public static Object transformAnswerToClient(Object httpObject) {
 		if (httpObject instanceof HttpResponse) {
 			httpObject = transformHttpResponse((HttpResponse) httpObject);
-			((HttpResponse) httpObject).headers().forEach((e) -> {
-				System.out.println(e.getKey() + ":" + e.getValue());
-			});
 		}
 		if (httpObject instanceof HttpContent) {
 			if (httpObject instanceof LastHttpContent) {
@@ -52,7 +50,7 @@ public final class ProxyUtil {
 				httpObject = transformHttpContent((HttpContent) httpObject);
 			}
 		}
-		System.out.println("I write to client " + httpObject.getClass().getName());
+		LOG.info(MessageFormat.format("Write to client {0}", httpObject.getClass().getName()));
 		return httpObject;
 	}
 
