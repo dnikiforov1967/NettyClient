@@ -35,7 +35,7 @@ public final class ProxyUtil {
 	}
 
 	public static HttpContent transformLastHttpContent(LastHttpContent lastHttpContent) {
-		return lastHttpContent;
+		return lastHttpContent.copy();
 	}
 
 	public static Object transformAnswerToClient(Object httpObject) {
