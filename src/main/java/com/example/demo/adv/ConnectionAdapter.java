@@ -35,18 +35,18 @@ public class ConnectionAdapter {
 
 	private static class RunGoal implements Runnable {
 
-		private final Channel channel;
+		private final ChannelFuture closeFuture;
 		private final EventLoopGroup group;
 
-		public RunGoal(Channel channel, EventLoopGroup group) {
-			this.channel = channel;
+		public RunGoal(ChannelFuture closeFuture, EventLoopGroup group) {
+			this.closeFuture = closeFuture;
 			this.group = group;
 		}
 
 		@Override
 		public void run() {
 			try {
-				channel.closeFuture().sync();
+				closeFuture.sync();
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ConnectionAdapter.class.getName()).log(Level.SEVERE, null, ex);
 			} finally {
@@ -79,8 +79,9 @@ public class ConnectionAdapter {
 					.handler(new ProxyToSererInitializer(this));
 			ChannelFuture channelFuture = bootstrap.connect().sync();
 			serverChannel = channelFuture.channel();
+			ChannelFuture closeFuture = serverChannel.closeFuture();
 			System.out.println("Server channel was instantiated");
-			Thread t = new Thread(new RunGoal(serverChannel, group));
+			Thread t = new Thread(new RunGoal(closeFuture, group));
 			t.setDaemon(true);
 			t.start();
 			//serverChannel.closeFuture().sync();
