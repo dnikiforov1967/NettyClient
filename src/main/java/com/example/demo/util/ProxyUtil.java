@@ -8,6 +8,8 @@ package com.example.demo.util;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import java.text.MessageFormat;
@@ -52,6 +54,32 @@ public final class ProxyUtil {
 		}
 		LOG.info(MessageFormat.format("Write to client {0}", httpObject.getClass().getName()));
 		return httpObject;
+	}
+
+	public static void setChunkHeader(Object obj) {
+		if (obj instanceof HttpResponse) {
+			HttpResponse response = (HttpResponse) obj;
+			response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+			LOG.info(MessageFormat.format("I append chunked header to {0}", obj.getClass().getName()));
+		}
+	}
+
+	public static void setConnectionHeader(Object obj, boolean isKeepAlive) {
+		if (obj instanceof HttpResponse) {
+			HttpResponse response = (HttpResponse) obj;
+			if (isKeepAlive) {
+				response.headers().set(
+						HttpHeaderNames.CONNECTION,
+						HttpHeaderValues.KEEP_ALIVE
+				);
+			} else {
+				response.headers().set(
+						HttpHeaderNames.CONNECTION,
+						HttpHeaderValues.CLOSE
+				);
+			}
+			LOG.info(MessageFormat.format("I append connection header to {0}", obj.getClass().getName()));
+		}
 	}
 
 }

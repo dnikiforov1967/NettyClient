@@ -45,18 +45,9 @@ public class ProxyToServerAdaperHandler extends SimpleChannelInboundHandler {
 		this.adapter = adapter;
 	}
 
-	public static HttpResponse duplicateHttpResponse(HttpResponse originalResponse) {
-		DefaultHttpResponse newResponse = new DefaultHttpResponse(originalResponse.getProtocolVersion(), originalResponse.getStatus());
-		newResponse.headers().add(originalResponse.headers());
-
-		return newResponse;
-	}
-
 	@Override
 	protected void channelRead0(ChannelHandlerContext chc, Object obj) throws Exception {
 		if (obj instanceof HttpObject) {
-			obj = ProxyUtil.transformAnswerToClient((HttpObject) obj);
-			adapter.appendChunkHeader(obj);
 			adapter.writeToClient(obj);
 		}
 	}

@@ -5,6 +5,7 @@
  */
 package com.example.demo.adv;
 
+import com.example.demo.util.ProxyUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -15,8 +16,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
@@ -91,26 +92,10 @@ public class ConnectionAdapter {
 	}
 
 	public ChannelFuture writeToClient(Object obj) {
+		obj = ProxyUtil.transformAnswerToClient((HttpObject) obj);
+		ProxyUtil.setChunkHeader(obj);
+		ProxyUtil.setConnectionHeader(obj, isKeepAlive);
 		return clientChannel.writeAndFlush(obj);
-	}
-
-	public void appendChunkHeader(Object obj) {
-		if (obj instanceof HttpResponse) {
-			HttpResponse response = (HttpResponse) obj;
-			response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-			if (isKeepAlive) {
-				response.headers().set(
-						HttpHeaderNames.CONNECTION,
-						HttpHeaderValues.KEEP_ALIVE
-				);
-			} else {
-				response.headers().set(
-						HttpHeaderNames.CONNECTION,
-						HttpHeaderValues.CLOSE
-				);
-			}
-			System.out.println("I append headers to " + obj.getClass().getName());
-		}
 	}
 
 	public void writeToServer(Object obj) {
