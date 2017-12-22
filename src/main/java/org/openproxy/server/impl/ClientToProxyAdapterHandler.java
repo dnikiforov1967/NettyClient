@@ -42,8 +42,4 @@ public class ClientToProxyAdapterHandler extends ChannelInboundHandlerAdapter {
 		ctx.close();
 	}
 	
-	private void writeToClient(ChannelHandlerContext ctx, HttpResponse response) {
-		ctx.writeAndFlush(response);
-	}
-	
 }
