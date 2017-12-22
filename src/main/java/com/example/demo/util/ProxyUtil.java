@@ -10,6 +10,7 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import java.text.MessageFormat;
@@ -54,6 +55,27 @@ public final class ProxyUtil {
 		}
 		LOG.info(MessageFormat.format("Write to client {0}", httpObject.getClass().getName()));
 		return httpObject;
+	}
+
+	public static Object transformRequestToServer(Object obj) {
+		if (obj instanceof HttpRequest) {
+			HttpRequest request = (HttpRequest) obj;
+			request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+		}
+		if (obj instanceof HttpContent) {
+			if (obj instanceof LastHttpContent) {
+				LastHttpContent lastHttpContent = (LastHttpContent) obj;
+				LastHttpContent copy = lastHttpContent.copy();
+				obj = copy;
+			} else {
+				HttpContent httpContent = (HttpContent) obj;
+				ByteBuf content = httpContent.content();
+				ByteBuf copy = content.copy();
+				obj = copy;
+			}
+		}
+		return obj;
 	}
 
 	public static void setChunkHeader(Object obj) {
