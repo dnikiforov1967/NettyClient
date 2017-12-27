@@ -25,7 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * This class is going to be the mediator between client2proxy and proxy2server channels
+ * 
  * @author dnikiforov
  */
 public class InterConnectionMediator {
