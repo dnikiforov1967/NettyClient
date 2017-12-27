@@ -27,10 +27,6 @@ public class ClientToProxyAdapterHandler extends ChannelInboundHandlerAdapter {
 			System.out.println("HttpRequest " + request.getUri());
 			connectionAdapter = new InterConnectionMediator(ctx.channel());
 			connectionAdapter.init(request);
-			HttpHeaders headers = request.headers();
-			headers.entries().forEach((e) -> {
-				System.out.println(e.getKey() + ":" + e.getValue());
-			});
 		}
 		connectionAdapter.writeToServer(msg);
 	}
