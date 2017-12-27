@@ -17,25 +17,24 @@ import io.netty.handler.codec.http.HttpResponse;
  * @author dnikiforov
  */
 public class ClientToProxyAdapterHandler extends ChannelInboundHandlerAdapter {
-	
+
 	private InterConnectionMediator connectionAdapter;
-	
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) msg;
-			System.out.println("HttpRequest " + request.getUri());
 			connectionAdapter = new InterConnectionMediator(ctx.channel());
 			connectionAdapter.init(request);
 		}
 		connectionAdapter.writeToServer(msg);
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		// Close the connection when an exception is raised.
 		cause.printStackTrace();
 		ctx.close();
 	}
-	
+
 }
