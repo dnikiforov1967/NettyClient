@@ -21,38 +21,15 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import java.net.InetSocketAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.openproxy.server.impl.listener.CloseFutureListener;
 
 /**
- * This class is going to be the mediator between client2proxy and proxy2server channels
- * 
+ * This class is going to be the mediator between client2proxy and proxy2server
+ * channels
+ *
  * @author dnikiforov
  */
 public class InterConnectionMediator {
-
-	private static class CloseTask implements Runnable {
-
-		private final ChannelFuture closeFuture;
-		private final EventLoop eventLoop;
-
-		public CloseTask(ChannelFuture closeFuture, EventLoop eventLoop) {
-			this.closeFuture = closeFuture;
-			this.eventLoop = eventLoop;
-		}
-
-		@Override
-		public void run() {
-			try {
-				closeFuture.sync();
-			} catch (InterruptedException ex) {
-				Logger.getLogger(InterConnectionMediator.class.getName()).log(Level.SEVERE, null, ex);
-			} finally {
-				eventLoop.shutdownGracefully();
-			}
-		}
-
-	}
 
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
@@ -62,38 +39,33 @@ public class InterConnectionMediator {
 		this.clientChannel = clientChannel;
 	}
 
-	public void init(HttpRequest request) {
+	private void listenChannelOnClose(Channel channel) {
+		ChannelFuture clientCloseFuture = channel.closeFuture();
+		clientCloseFuture.addListener(new CloseFutureListener());
+	}
+
+	private void setUpServerConnection() throws InterruptedException {
+		EventLoopGroup group = new NioEventLoopGroup();
+		Bootstrap bootstrap = new Bootstrap().group(group)
+				.channel(NioSocketChannel.class)
+				.remoteAddress(new InetSocketAddress("localhost", 8080))
+				.handler(new ProxyToSererInitializer(this));
+		ChannelFuture channelFuture = bootstrap.connect().sync();
+		serverChannel = channelFuture.channel();
+	}
+
+	public void init(HttpRequest request) throws InterruptedException {
 
 		if (HttpUtil.isKeepAlive(request)) {
 			isKeepAlive = true;
 		}
 
-		EventLoopGroup group = new NioEventLoopGroup();
+		listenChannelOnClose(clientChannel);
 
-		try {
-			EventLoop clientEventLoop = clientChannel.eventLoop();
-			ChannelFuture clientCloseFuture = clientChannel.closeFuture();
-			Thread tClient = new Thread(new CloseTask(clientCloseFuture, clientEventLoop));
-			tClient.setDaemon(true);
-			tClient.start();
+		setUpServerConnection();
 
-			Bootstrap bootstrap = new Bootstrap().group(group)
-					.channel(NioSocketChannel.class)
-					.remoteAddress(new InetSocketAddress("localhost", 8080))
-					.handler(new ProxyToSererInitializer(this));
-			ChannelFuture channelFuture = bootstrap.connect().sync();
-			serverChannel = channelFuture.channel();
-			ChannelFuture closeFuture = serverChannel.closeFuture();
-			System.out.println("Server channel was instantiated");
-			Thread tServer = new Thread(new CloseTask(closeFuture, serverChannel.eventLoop()));
-			tServer.setDaemon(true);
-			tServer.start();
-			//serverChannel.closeFuture().sync();
-		} catch (InterruptedException e) {
-			//e.printStackTrace();
-		} finally {
-			//group.shutdownGracefully();
-		}
+		listenChannelOnClose(serverChannel);
+
 	}
 
 	public ChannelFuture writeToClient(Object obj) {
@@ -109,40 +81,4 @@ public class InterConnectionMediator {
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
 
-	public void closeClient() {
-		if (clientChannel != null) {
-			final Promise<Void> promise = clientChannel.newPromise();
-			writeToClient(Unpooled.EMPTY_BUFFER).addListener(
-					new GenericFutureListener<Future<? super Void>>() {
-				@Override
-				public void operationComplete(
-						Future<? super Void> future)
-						throws Exception {
-					closeClientChannel(promise);
-				}
-			});
-		}
-	}
-
-	private void closeClientChannel(final Promise<Void> promise) {
-		clientChannel.close().addListener(
-				new GenericFutureListener<Future<? super Void>>() {
-			public void operationComplete(
-					Future<? super Void> future)
-					throws Exception {
-				if (future
-						.isSuccess()) {
-					promise.setSuccess(null);
-				} else {
-					promise.setFailure(future
-							.cause());
-				}
-			}
-		;
-	}
-
-
-);
-    }	
-	
 }
