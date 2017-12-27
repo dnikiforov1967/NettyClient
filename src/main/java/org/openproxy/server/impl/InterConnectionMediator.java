@@ -29,9 +29,11 @@ public class InterConnectionMediator {
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
 	private volatile boolean isKeepAlive = false;
+	private final HttpRequest request;
 
-	public InterConnectionMediator(Channel clientChannel) {
+	public InterConnectionMediator(Channel clientChannel, HttpRequest request) {
 		this.clientChannel = clientChannel;
+		this.request=request;
 	}
 
 	private void listenChannelOnClose(Channel channel) {
