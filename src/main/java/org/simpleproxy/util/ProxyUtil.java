@@ -103,7 +103,7 @@ public final class ProxyUtil {
 		}
 	}
 
-	private static int getContentLength(ByteBuf byteBuf) {
+	static int getContentLength(ByteBuf byteBuf) {
 		return byteBuf.readableBytes();
 	}
 
