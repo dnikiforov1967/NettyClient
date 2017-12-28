@@ -5,6 +5,8 @@
  */
 package org.simpleproxy.eventhandler;
 
+import io.netty.handler.codec.http.HttpRequest;
+
 /**
  *
  * @author dnikiforov
@@ -12,7 +14,7 @@ package org.simpleproxy.eventhandler;
 public class EventHandler implements EventHandlerInterface {
 
 	@Override
-	public int maxContentAggregationLength() {
+	public int maxContentAggregationLength(HttpRequest request) {
 		return 0;
 	}
 

@@ -5,10 +5,13 @@
  */
 package org.simpleproxy.eventhandler;
 
+import io.netty.handler.codec.http.HttpRequest;
+
 /**
  *
  * @author dnikiforov
  */
 public interface EventHandlerInterface {
-	int maxContentAggregationLength();
+
+	int maxContentAggregationLength(HttpRequest request);
 }

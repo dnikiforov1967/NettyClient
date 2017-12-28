@@ -49,12 +49,12 @@ public class InterConnectionMediator {
 		clientCloseFuture.addListener(new CloseFutureListener());
 	}
 
-	private void setUpServerConnection() throws InterruptedException {
+	private void setUpServerConnection(HttpRequest request) throws InterruptedException {
 		EventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap bootstrap = new Bootstrap().group(group)
 				.channel(NioSocketChannel.class)
 				.remoteAddress(new InetSocketAddress("localhost", 8080))
-				.handler(new ProxyToSererInitializer(this));
+				.handler(new ProxyToSererInitializer(this, request));
 		ChannelFuture channelFuture = bootstrap.connect().sync();
 		serverChannel = channelFuture.channel();
 	}
@@ -67,7 +67,7 @@ public class InterConnectionMediator {
 
 		listenChannelOnClose(clientChannel);
 
-		setUpServerConnection();
+		setUpServerConnection(request);
 
 		listenChannelOnClose(serverChannel);
 
@@ -91,8 +91,8 @@ public class InterConnectionMediator {
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
 	
-	public int getMaxAggregatedContentLength() {
-		return eventHandler.maxContentAggregationLength();
+	public int getMaxAggregatedContentLength(HttpRequest request) {
+		return eventHandler.maxContentAggregationLength(request);
 	}
 
 }
