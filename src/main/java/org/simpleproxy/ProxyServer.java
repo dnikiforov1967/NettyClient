@@ -9,6 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.simpleproxy.eventhandler.EventHandler;
 
 public class ProxyServer {
 
@@ -30,7 +31,7 @@ public class ProxyServer {
 	}
 
 	public static void main(String[] args) {
-		new ProxyServer(8181, 2, 16).openServer(new ClientToProxyInitializer());
+		new ProxyServer(8181, 2, 16).openServer(new ClientToProxyInitializer(new EventHandler()));
 	}
 
 	public void openServer(ChannelHandler handler) {

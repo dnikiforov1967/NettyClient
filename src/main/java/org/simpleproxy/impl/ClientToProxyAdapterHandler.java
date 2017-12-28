@@ -11,6 +11,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import org.simpleproxy.eventhandler.EventHandlerInterface;
 
 /**
  *
@@ -19,12 +20,17 @@ import io.netty.handler.codec.http.HttpResponse;
 public class ClientToProxyAdapterHandler extends ChannelInboundHandlerAdapter {
 
 	private InterConnectionMediator connectionAdapter;
+	private final EventHandlerInterface eventHandler;
+
+	public ClientToProxyAdapterHandler(EventHandlerInterface eventHandler) {
+		this.eventHandler = eventHandler;
+	}
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) msg;
-			connectionAdapter = new InterConnectionMediator(ctx.channel(), request);
+			connectionAdapter = new InterConnectionMediator(ctx.channel(), request, eventHandler);
 			connectionAdapter.init(request);
 		}
 		connectionAdapter.writeToServer(msg);

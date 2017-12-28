@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.InetSocketAddress;
 import java.util.logging.Logger;
+import org.simpleproxy.eventhandler.EventHandlerInterface;
 import org.simpleproxy.impl.listener.CloseFutureListener;
 
 /**
@@ -28,24 +29,26 @@ import org.simpleproxy.impl.listener.CloseFutureListener;
  * @author dnikiforov
  */
 public class InterConnectionMediator {
-	
+
 	private final static Logger LOG = Logger.getLogger(InterConnectionMediator.class.getName());
-	
+
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
 	private volatile boolean isKeepAlive = false;
 	private final HttpRequest request;
-	
-	public InterConnectionMediator(Channel clientChannel, HttpRequest request) {
+	private final EventHandlerInterface eventHandler;
+
+	public InterConnectionMediator(Channel clientChannel, HttpRequest request, EventHandlerInterface eventHandler) {
 		this.clientChannel = clientChannel;
 		this.request = request;
+		this.eventHandler = eventHandler;
 	}
-	
+
 	private void listenChannelOnClose(Channel channel) {
 		ChannelFuture clientCloseFuture = channel.closeFuture();
 		clientCloseFuture.addListener(new CloseFutureListener());
 	}
-	
+
 	private void setUpServerConnection() throws InterruptedException {
 		EventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap bootstrap = new Bootstrap().group(group)
@@ -55,21 +58,21 @@ public class InterConnectionMediator {
 		ChannelFuture channelFuture = bootstrap.connect().sync();
 		serverChannel = channelFuture.channel();
 	}
-	
+
 	public void init(HttpRequest request) throws InterruptedException {
-		
+
 		if (HttpUtil.isKeepAlive(request)) {
 			isKeepAlive = true;
 		}
-		
+
 		listenChannelOnClose(clientChannel);
-		
+
 		setUpServerConnection();
-		
+
 		listenChannelOnClose(serverChannel);
-		
+
 	}
-	
+
 	public ChannelFuture writeToClient(Object obj) {
 		obj = ProxyUtil.transformAnswerToClient((HttpObject) obj);
 		if (obj instanceof FullHttpResponse) {
@@ -81,11 +84,15 @@ public class InterConnectionMediator {
 		ProxyUtil.setConnectionHeader(obj, isKeepAlive);
 		return clientChannel.writeAndFlush(obj);
 	}
-	
+
 	public void writeToServer(Object obj) {
 		obj = ProxyUtil.transformRequestToServer(obj);
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
 	
+	public int getMaxAggregatedContentLength() {
+		return eventHandler.maxContentAggregationLength();
+	}
+
 }

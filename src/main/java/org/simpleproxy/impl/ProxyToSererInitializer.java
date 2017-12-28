@@ -27,7 +27,10 @@ public class ProxyToSererInitializer extends ChannelInitializer<SocketChannel> {
 	protected void initChannel(SocketChannel channel) throws Exception {
 		ChannelPipeline pipeline = channel.pipeline();
 		pipeline.addLast(new HttpClientCodec());
-		pipeline.addLast("aggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
+		int maxAggregatedContentLength = adapter.getMaxAggregatedContentLength();
+		if (maxAggregatedContentLength > 0) {
+			pipeline.addLast("aggregator", new HttpObjectAggregator(maxAggregatedContentLength));
+		}
 		pipeline.addLast("handler", new ProxyToServerAdaperHandler(adapter));
 	}
 

@@ -13,7 +13,6 @@ public class UtilTests {
 		ByteBuf buff = Unpooled.buffer(256);
 		buff.writeCharSequence("abcdef", StandardCharsets.UTF_8);
 		assertEquals(6, ProxyUtil.getContentLength(buff));
-
 	}
 
 }
