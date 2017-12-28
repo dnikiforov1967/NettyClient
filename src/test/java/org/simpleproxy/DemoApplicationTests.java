@@ -1,4 +1,4 @@
-package com.example.demo;
+package org.simpleproxy;
 
 import org.junit.Test;
 

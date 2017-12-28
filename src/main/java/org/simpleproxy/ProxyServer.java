@@ -1,6 +1,6 @@
-package com.example;
+package org.simpleproxy;
 
-import org.openproxy.server.impl.ClientToProxyInitializer;
+import org.simpleproxy.impl.ClientToProxyInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;

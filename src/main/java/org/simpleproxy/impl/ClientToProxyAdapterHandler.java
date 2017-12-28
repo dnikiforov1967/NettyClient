@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.openproxy.server.impl;
+package org.simpleproxy.impl;
 
-import org.openproxy.server.impl.InterConnectionMediator;
+import org.simpleproxy.impl.InterConnectionMediator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpHeaders;

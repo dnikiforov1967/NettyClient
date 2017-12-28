@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.openproxy.server.impl;
+package org.simpleproxy.impl;
 
-import com.example.demo.util.ProxyUtil;
+import org.simpleproxy.util.ProxyUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -19,7 +19,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.InetSocketAddress;
 import java.util.logging.Logger;
-import org.openproxy.server.impl.listener.CloseFutureListener;
+import org.simpleproxy.impl.listener.CloseFutureListener;
 
 /**
  * This class is going to be the mediator between client2proxy and proxy2server

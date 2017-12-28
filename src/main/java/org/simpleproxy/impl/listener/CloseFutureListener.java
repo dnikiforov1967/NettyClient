@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.openproxy.server.impl.listener;
+package org.simpleproxy.impl.listener;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
