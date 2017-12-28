@@ -12,10 +12,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.InetSocketAddress;
+import java.util.logging.Logger;
 import org.openproxy.server.impl.listener.CloseFutureListener;
 
 /**
@@ -25,22 +28,24 @@ import org.openproxy.server.impl.listener.CloseFutureListener;
  * @author dnikiforov
  */
 public class InterConnectionMediator {
-
+	
+	private final static Logger LOG = Logger.getLogger(InterConnectionMediator.class.getName());
+	
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
 	private volatile boolean isKeepAlive = false;
 	private final HttpRequest request;
-
+	
 	public InterConnectionMediator(Channel clientChannel, HttpRequest request) {
 		this.clientChannel = clientChannel;
-		this.request=request;
+		this.request = request;
 	}
-
+	
 	private void listenChannelOnClose(Channel channel) {
 		ChannelFuture clientCloseFuture = channel.closeFuture();
 		clientCloseFuture.addListener(new CloseFutureListener());
 	}
-
+	
 	private void setUpServerConnection() throws InterruptedException {
 		EventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap bootstrap = new Bootstrap().group(group)
@@ -50,32 +55,37 @@ public class InterConnectionMediator {
 		ChannelFuture channelFuture = bootstrap.connect().sync();
 		serverChannel = channelFuture.channel();
 	}
-
+	
 	public void init(HttpRequest request) throws InterruptedException {
-
+		
 		if (HttpUtil.isKeepAlive(request)) {
 			isKeepAlive = true;
 		}
-
+		
 		listenChannelOnClose(clientChannel);
-
+		
 		setUpServerConnection();
-
+		
 		listenChannelOnClose(serverChannel);
-
+		
 	}
-
+	
 	public ChannelFuture writeToClient(Object obj) {
 		obj = ProxyUtil.transformAnswerToClient((HttpObject) obj);
-		ProxyUtil.setChunkHeader(obj);
+		if (obj instanceof FullHttpResponse) {
+			//TODO define length of the response if noone is in the header ?
+			ProxyUtil.setLengthHeader((FullHttpResponse) obj);
+		} else if (obj instanceof HttpResponse) {
+			ProxyUtil.setChunkHeader(obj);
+		}
 		ProxyUtil.setConnectionHeader(obj, isKeepAlive);
 		return clientChannel.writeAndFlush(obj);
 	}
-
+	
 	public void writeToServer(Object obj) {
 		obj = ProxyUtil.transformRequestToServer(obj);
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
-
+	
 }
