@@ -6,13 +6,17 @@
 package com.example.demo.util;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 
@@ -32,6 +36,13 @@ public final class ProxyUtil {
 		return httpContent.content().copy();
 	}
 
+	private static HttpResponse transformFullHttpResponse(FullHttpResponse originalResponse) {
+		ByteBuf copy = originalResponse.content().copy();
+		DefaultFullHttpResponse response = new DefaultFullHttpResponse(originalResponse.protocolVersion(), originalResponse.status(), copy);
+		response.headers().add(originalResponse.headers());
+		return response;
+	}
+
 	private static HttpResponse transformHttpResponse(HttpResponse originalResponse) {
 		DefaultHttpResponse response = new DefaultHttpResponse(originalResponse.protocolVersion(), originalResponse.status());
 		response.headers().add(originalResponse.headers());
@@ -43,6 +54,10 @@ public final class ProxyUtil {
 	}
 
 	public static Object transformAnswerToClient(Object httpObject) {
+		if (httpObject instanceof FullHttpResponse) {
+			httpObject = transformFullHttpResponse((FullHttpResponse) httpObject);
+			return httpObject;
+		}
 		if (httpObject instanceof HttpResponse) {
 			httpObject = transformHttpResponse((HttpResponse) httpObject);
 		}
@@ -81,9 +96,25 @@ public final class ProxyUtil {
 	public static void setChunkHeader(Object obj) {
 		if (obj instanceof HttpResponse) {
 			HttpResponse response = (HttpResponse) obj;
-			response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-			LOG.info(MessageFormat.format("I append chunked header to {0}", obj.getClass().getName()));
+			if (!response.headers().contains(HttpHeaderNames.CONTENT_LENGTH)) {
+				response.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+				LOG.info(MessageFormat.format("I append chunked header to {0}", obj.getClass().getName()));
+			}
 		}
+	}
+
+	private static int getContentLength(ByteBuf byteBuf) {
+		return byteBuf.readableBytes();
+	}
+
+	public static void setLengthHeader(FullHttpResponse response) {
+		if (!response.headers().contains(HttpHeaderNames.CONTENT_LENGTH)) {
+			response.headers().remove(HttpHeaderNames.TRANSFER_ENCODING);
+			ByteBuf content = response.content();
+			int length = getContentLength(content);
+			response.headers().add(HttpHeaderNames.CONTENT_LENGTH, length);
+		}
+		LOG.info(MessageFormat.format("I append length header to {0}", response.getClass().getName()));
 	}
 
 	public static void setConnectionHeader(Object obj, boolean isKeepAlive) {
