@@ -6,6 +6,8 @@
 package org.simpleproxy.eventhandler;
 
 import io.netty.handler.codec.http.HttpRequest;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  *
@@ -18,4 +20,9 @@ public class EventHandler implements EventHandlerInterface {
 		return 0;
 	}
 
+	@Override
+	public SocketAddress resolveTargetServer(HttpRequest request) {
+		return new InetSocketAddress("localhost",8080);
+	}	
+	
 }

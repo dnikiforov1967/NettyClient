@@ -18,6 +18,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.logging.Logger;
 import org.simpleproxy.eventhandler.EventHandlerInterface;
 import org.simpleproxy.impl.listener.CloseFutureListener;
@@ -51,9 +52,10 @@ public class InterConnectionMediator {
 
 	private void setUpServerConnection(HttpRequest request) throws InterruptedException {
 		EventLoopGroup group = new NioEventLoopGroup();
+		SocketAddress resolveTargetServer = eventHandler.resolveTargetServer(request);
 		Bootstrap bootstrap = new Bootstrap().group(group)
 				.channel(NioSocketChannel.class)
-				.remoteAddress(new InetSocketAddress("localhost", 8080))
+				.remoteAddress(resolveTargetServer)
 				.handler(new ProxyToSererInitializer(this, request));
 		ChannelFuture channelFuture = bootstrap.connect().sync();
 		serverChannel = channelFuture.channel();

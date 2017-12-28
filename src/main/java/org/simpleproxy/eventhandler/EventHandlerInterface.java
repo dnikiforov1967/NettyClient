@@ -6,6 +6,7 @@
 package org.simpleproxy.eventhandler;
 
 import io.netty.handler.codec.http.HttpRequest;
+import java.net.SocketAddress;
 
 /**
  *
@@ -14,4 +15,6 @@ import io.netty.handler.codec.http.HttpRequest;
 public interface EventHandlerInterface {
 
 	int maxContentAggregationLength(HttpRequest request);
+
+	SocketAddress resolveTargetServer(HttpRequest request);
 }
