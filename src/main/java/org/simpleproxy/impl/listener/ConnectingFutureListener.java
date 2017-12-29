@@ -5,8 +5,10 @@
  */
 package org.simpleproxy.impl.listener;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.EventLoop;
 import org.simpleproxy.eventhandler.EventHandlerInterface;
 
 /**
@@ -24,7 +26,17 @@ public class ConnectingFutureListener implements ChannelFutureListener {
 	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
 		if (!future.isSuccess()) {
-			eventHandler.connectionFailed();
+			try {
+				eventHandler.connectionFailed();
+			} finally {
+				Channel channel = future.channel();
+				if (channel != null) {
+					EventLoop eventLoop = channel.eventLoop();
+					if (eventLoop != null) {
+						eventLoop.shutdownGracefully();
+					}
+				}
+			}
 		}
 	}
 
