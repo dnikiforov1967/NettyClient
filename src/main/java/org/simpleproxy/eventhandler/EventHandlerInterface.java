@@ -17,4 +17,6 @@ public interface EventHandlerInterface {
 	int maxContentAggregationLength(HttpRequest request);
 
 	SocketAddress resolveTargetServer(HttpRequest request);
+
+	void connectionFailed();
 }

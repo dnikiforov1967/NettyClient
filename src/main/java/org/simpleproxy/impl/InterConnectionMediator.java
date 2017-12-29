@@ -22,6 +22,7 @@ import java.net.SocketAddress;
 import java.util.logging.Logger;
 import org.simpleproxy.eventhandler.EventHandlerInterface;
 import org.simpleproxy.impl.listener.CloseFutureListener;
+import org.simpleproxy.impl.listener.ConnectingFutureListener;
 
 /**
  * This class is going to be the mediator between client2proxy and proxy2server
@@ -57,8 +58,11 @@ public class InterConnectionMediator {
 				.channel(NioSocketChannel.class)
 				.remoteAddress(resolveTargetServer)
 				.handler(new ProxyToSererInitializer(this, request));
-		ChannelFuture channelFuture = bootstrap.connect().sync();
-		serverChannel = channelFuture.channel();
+		ChannelFuture connectFuture = bootstrap.connect();
+		ConnectingFutureListener connectingFutureListener = new ConnectingFutureListener(eventHandler);
+		connectFuture.addListener(connectingFutureListener);
+		connectFuture.sync();
+		serverChannel = connectFuture.channel();
 	}
 
 	public void init(HttpRequest request) throws InterruptedException {
@@ -92,7 +96,7 @@ public class InterConnectionMediator {
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
-	
+
 	public int getMaxAggregatedContentLength(HttpRequest request) {
 		return eventHandler.maxContentAggregationLength(request);
 	}
