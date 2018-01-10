@@ -15,9 +15,9 @@ import java.util.logging.Logger;
  *
  * @author dnikiforov
  */
-public class CloseFutureListener implements ChannelFutureListener {
+public abstract class CloseFutureListener implements ChannelFutureListener {
 
-	private static final Logger LOG = Logger.getLogger(CloseFutureListener.class.getName());
+	protected static final Logger LOG = Logger.getLogger(CloseFutureListener.class.getName());
 
 	@Override
 	public void operationComplete(ChannelFuture f) throws Exception {

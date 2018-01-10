@@ -17,12 +17,15 @@ import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import org.simpleproxy.eventhandler.EventHandlerInterface;
+import org.simpleproxy.impl.listener.ClientCloseListener;
 import org.simpleproxy.impl.listener.CloseFutureListener;
 import org.simpleproxy.impl.listener.ConnectingFutureListener;
+import org.simpleproxy.impl.listener.ServerCloseListener;
 
 /**
  * This class is going to be the mediator between client2proxy and proxy2server
@@ -36,6 +39,7 @@ public class InterConnectionMediator {
 
 	private final Channel clientChannel;
 	private volatile Channel serverChannel;
+	private final Map<SocketAddress, Channel> channelMap = new ConcurrentHashMap<>();
 	private volatile boolean isKeepAlive = false;
 	private final HttpRequest request;
 	private final EventHandlerInterface eventHandler;
@@ -45,38 +49,51 @@ public class InterConnectionMediator {
 		this.request = request;
 		this.eventHandler = eventHandler;
 	}
-
-	private void listenChannelOnClose(Channel channel) {
-		ChannelFuture clientCloseFuture = channel.closeFuture();
-		clientCloseFuture.addListener(new CloseFutureListener());
+	
+	public void handleClientClose() {
+		listenClientChannelOnClose(clientChannel);
 	}
 
+	private void listenClientChannelOnClose(Channel channel) {
+		ChannelFuture clientCloseFuture = channel.closeFuture();
+		clientCloseFuture.addListener(new ClientCloseListener(channelMap));
+	}
+
+	private void listenServerChannelOnClose(Channel channel) {
+		ChannelFuture clientCloseFuture = channel.closeFuture();
+		clientCloseFuture.addListener(new ServerCloseListener(channelMap));
+	}
+	
+	/**
+	 * Method setup the connection to server
+	 *
+	 * @param request
+	 * @throws InterruptedException
+	 */
 	private void setUpServerConnection(HttpRequest request) throws InterruptedException {
 		EventLoopGroup group = new NioEventLoopGroup();
 		SocketAddress resolveTargetServer = eventHandler.resolveTargetServer(request);
-		Bootstrap bootstrap = new Bootstrap().group(group)
-				.channel(NioSocketChannel.class)
-				.remoteAddress(resolveTargetServer)
-				.handler(new ProxyToSererInitializer(this, request));
-		ChannelFuture connectFuture = bootstrap.connect();
-		ConnectingFutureListener connectingFutureListener = new ConnectingFutureListener(eventHandler);
-		connectFuture.addListener(connectingFutureListener);
-		connectFuture.sync();
-		serverChannel = connectFuture.channel();
+		serverChannel = channelMap.get(resolveTargetServer);
+		if (serverChannel == null) {
+			Bootstrap bootstrap = new Bootstrap().group(group)
+					.channel(NioSocketChannel.class)
+					.remoteAddress(resolveTargetServer)
+					.handler(new ProxyToSererInitializer(this, request));
+			ChannelFuture connectFuture = bootstrap.connect();
+			ConnectingFutureListener connectingFutureListener = new ConnectingFutureListener(eventHandler);
+			connectFuture.addListener(connectingFutureListener);
+			connectFuture.sync();
+			serverChannel = connectFuture.channel();
+			listenServerChannelOnClose(serverChannel);
+			channelMap.put(resolveTargetServer, serverChannel);
+		}
 	}
 
 	public void init(HttpRequest request) throws InterruptedException {
-
 		if (HttpUtil.isKeepAlive(request)) {
 			isKeepAlive = true;
 		}
-
-		listenChannelOnClose(clientChannel);
-
 		setUpServerConnection(request);
-
-		listenChannelOnClose(serverChannel);
-
 	}
 
 	public ChannelFuture writeToClient(Object obj) {
