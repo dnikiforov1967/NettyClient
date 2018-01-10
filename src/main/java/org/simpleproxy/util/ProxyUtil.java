@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.AsciiString;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
@@ -72,10 +73,11 @@ public final class ProxyUtil {
 		return httpObject;
 	}
 
-	public static Object transformRequestToServer(Object obj) {
+	public static Object transformRequestToServer(Object obj, boolean keepAlive) {
 		if (obj instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) obj;
-			request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+			AsciiString value = keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE; 
+			request.headers().set(HttpHeaderNames.CONNECTION, value);
 			request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
 		}
 		if (obj instanceof HttpContent) {

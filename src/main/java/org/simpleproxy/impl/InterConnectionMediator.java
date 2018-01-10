@@ -75,6 +75,7 @@ public class InterConnectionMediator {
 		SocketAddress resolveTargetServer = eventHandler.resolveTargetServer(request);
 		serverChannel = channelMap.get(resolveTargetServer);
 		if (serverChannel == null) {
+			LOG.info("I create new server connection");
 			Bootstrap bootstrap = new Bootstrap().group(group)
 					.channel(NioSocketChannel.class)
 					.remoteAddress(resolveTargetServer)
@@ -86,6 +87,8 @@ public class InterConnectionMediator {
 			serverChannel = connectFuture.channel();
 			listenServerChannelOnClose(serverChannel);
 			channelMap.put(resolveTargetServer, serverChannel);
+		} else {
+			LOG.info("I use existing server connection");
 		}
 	}
 
@@ -109,7 +112,7 @@ public class InterConnectionMediator {
 	}
 
 	public void writeToServer(Object obj) {
-		obj = ProxyUtil.transformRequestToServer(obj);
+		obj = ProxyUtil.transformRequestToServer(obj, isKeepAlive);
 		serverChannel.writeAndFlush(obj);
 		System.out.println("I write to server " + obj.getClass().getName());
 	}
