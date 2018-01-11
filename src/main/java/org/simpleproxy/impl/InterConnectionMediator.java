@@ -7,6 +7,8 @@ package org.simpleproxy.impl;
 
 import org.simpleproxy.util.ProxyUtil;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -49,7 +51,7 @@ public class InterConnectionMediator {
 		this.request = request;
 		this.eventHandler = eventHandler;
 	}
-	
+
 	public void handleClientClose() {
 		listenClientChannelOnClose(clientChannel);
 	}
@@ -63,7 +65,7 @@ public class InterConnectionMediator {
 		ChannelFuture clientCloseFuture = channel.closeFuture();
 		clientCloseFuture.addListener(new ServerCloseListener(channelMap));
 	}
-	
+
 	/**
 	 * Method setup the connection to server
 	 *
@@ -88,6 +90,11 @@ public class InterConnectionMediator {
 			listenServerChannelOnClose(serverChannel);
 			channelMap.put(resolveTargetServer, serverChannel);
 		} else {
+			//Is the connection still alive ?
+			{
+				ByteBuf buff = Unpooled.EMPTY_BUFFER;
+				serverChannel.writeAndFlush(buff);
+			}
 			LOG.info("I use existing server connection");
 		}
 	}
