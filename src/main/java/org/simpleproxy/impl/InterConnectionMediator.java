@@ -13,19 +13,19 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.LastHttpContent;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import org.simpleproxy.eventhandler.EventHandlerInterface;
+import org.simpleproxy.extend.ExtendedNioSocketChannel;
 import org.simpleproxy.impl.listener.ClientCloseListener;
-import org.simpleproxy.impl.listener.CloseFutureListener;
 import org.simpleproxy.impl.listener.ConnectingFutureListener;
 import org.simpleproxy.impl.listener.ServerCloseListener;
 
@@ -40,8 +40,8 @@ public class InterConnectionMediator {
 	private final static Logger LOG = Logger.getLogger(InterConnectionMediator.class.getName());
 
 	private final Channel clientChannel;
-	private volatile Channel serverChannel;
-	private final Map<SocketAddress, Channel> channelMap = new ConcurrentHashMap<>();
+	private volatile ExtendedNioSocketChannel serverChannel;
+	private final Map<SocketAddress, ExtendedNioSocketChannel> channelMap = new ConcurrentHashMap<>();
 	private volatile boolean isKeepAlive = false;
 	private final HttpRequest request;
 	private final EventHandlerInterface eventHandler;
@@ -77,26 +77,28 @@ public class InterConnectionMediator {
 		SocketAddress resolveTargetServer = eventHandler.resolveTargetServer(request);
 		serverChannel = channelMap.get(resolveTargetServer);
 		if (serverChannel == null) {
-			LOG.info("I create new server connection");
-			Bootstrap bootstrap = new Bootstrap().group(group)
-					.channel(NioSocketChannel.class)
-					.remoteAddress(resolveTargetServer)
-					.handler(new ProxyToSererInitializer(this, request));
-			ChannelFuture connectFuture = bootstrap.connect();
-			ConnectingFutureListener connectingFutureListener = new ConnectingFutureListener(eventHandler);
-			connectFuture.addListener(connectingFutureListener);
-			connectFuture.sync();
-			serverChannel = connectFuture.channel();
-			listenServerChannelOnClose(serverChannel);
-			channelMap.put(resolveTargetServer, serverChannel);
+			initiateNewConnection(group, resolveTargetServer, request);
 		} else {
-			//Is the connection still alive ?
-			{
-				ByteBuf buff = Unpooled.EMPTY_BUFFER;
-				serverChannel.writeAndFlush(buff);
-			}
-			LOG.info("I use existing server connection");
+			//Is the connection available
+			boolean setUsed = serverChannel.setUsed();
+			if (!setUsed) {
+				initiateNewConnection(group, resolveTargetServer, request);
+			}	
 		}
+	}
+
+	private void initiateNewConnection(EventLoopGroup group, SocketAddress resolveTargetServer, HttpRequest request1) throws InterruptedException {
+		LOG.info("I create new server connection");
+		Bootstrap bootstrap = new Bootstrap().group(group)
+				.channel(ExtendedNioSocketChannel.class)
+				.remoteAddress(resolveTargetServer).handler(new ProxyToSererInitializer(this, request1));
+		ChannelFuture connectFuture = bootstrap.connect();
+		ConnectingFutureListener connectingFutureListener = new ConnectingFutureListener(eventHandler);
+		connectFuture.addListener(connectingFutureListener);
+		connectFuture.sync();
+		serverChannel = (ExtendedNioSocketChannel)connectFuture.channel();
+		listenServerChannelOnClose(serverChannel);
+		channelMap.put(resolveTargetServer, serverChannel);
 	}
 
 	public void init(HttpRequest request) throws InterruptedException {
@@ -115,7 +117,11 @@ public class InterConnectionMediator {
 			ProxyUtil.setChunkHeader(obj);
 		}
 		ProxyUtil.setConnectionHeader(obj, isKeepAlive);
-		return clientChannel.writeAndFlush(obj);
+		if (obj instanceof LastHttpContent) {
+			serverChannel.setIdle();
+		}
+		ChannelFuture writeAndFlush = clientChannel.writeAndFlush(obj);
+		return writeAndFlush;
 	}
 
 	public void writeToServer(Object obj) {

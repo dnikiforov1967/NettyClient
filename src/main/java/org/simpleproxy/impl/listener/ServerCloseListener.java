@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.net.SocketAddress;
 import java.util.Map;
+import org.simpleproxy.extend.ExtendedNioSocketChannel;
 
 /**
  *
@@ -16,17 +17,18 @@ import java.util.Map;
  */
 public class ServerCloseListener extends CloseFutureListener {
 
-	private final Map<SocketAddress, Channel> map;
+	private final Map<SocketAddress, ExtendedNioSocketChannel> map;
 
-	public ServerCloseListener(final Map<SocketAddress, Channel> map) {
+	public ServerCloseListener(final Map<SocketAddress, ExtendedNioSocketChannel> map) {
 		this.map = map;
 	}
 
 	@Override
 	public void operationComplete(ChannelFuture f) throws Exception {
-		SocketAddress remoteAddress = f.channel().remoteAddress();
-		Channel remove = map.remove(remoteAddress);
-		if (remove != null) {
+		Channel channel = f.channel();
+		SocketAddress remoteAddress = channel.remoteAddress();
+		boolean remove = map.remove(remoteAddress, channel);
+		if (remove) {
 			LOG.info("Server connection was removed");
 		} else {
 			LOG.info("Connection was not found in map");

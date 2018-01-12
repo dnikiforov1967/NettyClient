@@ -5,10 +5,12 @@
  */
 package org.simpleproxy.eventhandler;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.simpleproxy.extend.ExtendedNioSocketChannel;
 
 /**
  *
@@ -21,7 +23,11 @@ public class IdleEventHandler extends ChannelDuplexHandler {
 		if (evt instanceof IdleStateEvent) {
 			IdleStateEvent e = (IdleStateEvent) evt;
 			if (e.state() == IdleState.WRITER_IDLE) {
-				ctx.close();
+				ExtendedNioSocketChannel channel = (ExtendedNioSocketChannel) ctx.channel();
+				boolean setTimedOut = channel.setTimedOut();
+				if (setTimedOut) {
+					ctx.close();
+				}
 			}
 		}
 	}

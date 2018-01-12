@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.net.SocketAddress;
 import java.util.Map;
+import org.simpleproxy.extend.ExtendedNioSocketChannel;
 
 /**
  *
@@ -16,9 +17,9 @@ import java.util.Map;
  */
 public class ClientCloseListener extends CloseFutureListener {
 
-	private final Map<SocketAddress, Channel> map;
+	private final Map<SocketAddress, ExtendedNioSocketChannel> map;
 
-	public ClientCloseListener(Map<SocketAddress, Channel> map) {
+	public ClientCloseListener(Map<SocketAddress, ExtendedNioSocketChannel> map) {
 		this.map = map;
 	}
 
